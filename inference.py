@@ -35,18 +35,25 @@ def scan_checkpoint(cp_dir, prefix):
 
 
 def inference(a):
+    # создаем объект генератора
     generator = Generator(h).to(device)
 
+    # просто загружаем веса модели
     state_dict_g = load_checkpoint(a.checkpoint_file, device)
     generator.load_state_dict(state_dict_g['generator'])
 
+    # получаем директории входных файлов
     filelist = os.listdir(a.input_wavs_dir)
 
+    # создаем директорию для сгенерированнных файлов
     os.makedirs(a.output_dir, exist_ok=True)
 
+    # TODO: understand
     generator.eval()
     generator.remove_weight_norm()
+    # для inference, мы отключаем autograd пайторча, потому что нам больше не надо считать градиент
     with torch.no_grad():
+        # проходим
         for i, filname in enumerate(filelist):
             wav, sr = load_wav(os.path.join(a.input_wavs_dir, filname))
             wav = wav / MAX_WAV_VALUE
@@ -81,11 +88,15 @@ def main():
     with open(config_file) as f:
         data = f.read()
 
+    # преобразуем полученный ранее конфиг в питон объект для удобства работы
     global h
     json_config = json.loads(data)
     h = AttrDict(json_config)
 
+    # задаем ядро для RNG
     torch.manual_seed(h.seed)
+
+    # устанавливаем используемый девайс для работы (GPU vs CPU)
     global device
     if torch.cuda.is_available():
         torch.cuda.manual_seed(h.seed)
@@ -93,6 +104,7 @@ def main():
     else:
         device = torch.device('cpu')
 
+    # infernce это процесс ввода данных в модель машинного обучения для расчета выходных данных
     inference(a)
 
 
