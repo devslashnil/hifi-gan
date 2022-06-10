@@ -65,12 +65,18 @@ def inference(a):
 def main():
     print('Initializing Inference Process..')
 
+    # Выделяем переданные параметры
     parser = argparse.ArgumentParser()
+    # директория с входными файлами
     parser.add_argument('--input_wavs_dir', default='test_files')
+    # директория для результатов
     parser.add_argument('--output_dir', default='generated_files')
+    # файл чекпоинтов, т.е. файл с набором весов нашей модели на разных итерациях
     parser.add_argument('--checkpoint_file', required=True)
     a = parser.parse_args()
 
+    # считываем данные конфига для папки с чекпоинтами
+    # TODO: почему чекпоинты разбиты по попкам
     config_file = os.path.join(os.path.split(a.checkpoint_file)[0], 'config.json')
     with open(config_file) as f:
         data = f.read()
