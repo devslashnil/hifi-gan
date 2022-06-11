@@ -42,7 +42,7 @@ def inference(a):
     state_dict_g = load_checkpoint(a.checkpoint_file, device)
     generator.load_state_dict(state_dict_g['generator'])
 
-    # получаем директории входных файлов
+    # получаем список всех входных файлов
     filelist = os.listdir(a.input_wavs_dir)
 
     # создаем директорию для сгенерированнных файлов
@@ -53,17 +53,24 @@ def inference(a):
     generator.remove_weight_norm()
     # для inference, мы отключаем autograd пайторча, потому что нам больше не надо считать градиент
     with torch.no_grad():
-        # проходим
+        # итерируем по входным файлам
         for i, filname in enumerate(filelist):
+            # получаем данные аудио и частоту дискретизации
             wav, sr = load_wav(os.path.join(a.input_wavs_dir, filname))
+            # TODO: короче говоря обработка аудио и его прокидывание
+            print('--- wav, sr,', wav, sr)
             wav = wav / MAX_WAV_VALUE
+            print('--- wav / MAX_WAV_VALUE,', wav)
             wav = torch.FloatTensor(wav).to(device)
+            print('--- torch.FloatTensor(wav).to(device)', wav)
             x = get_mel(wav.unsqueeze(0))
             y_g_hat = generator(x)
+            print('--- y_g_hat', y_g_hat)
             audio = y_g_hat.squeeze()
             audio = audio * MAX_WAV_VALUE
             audio = audio.cpu().numpy().astype('int16')
 
+            # записываем в папку результатов и в консоль результаты работы генератора
             output_file = os.path.join(a.output_dir, os.path.splitext(filname)[0] + '_generated.wav')
             write(output_file, h.sampling_rate, audio)
             print(output_file)
