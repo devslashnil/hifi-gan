@@ -50,6 +50,7 @@ def inference(a):
 
     # TODO: understand
     generator.eval()
+    # TODO: understand
     generator.remove_weight_norm()
     # для inference, мы отключаем autograd пайторча, потому что нам больше не надо считать градиент
     with torch.no_grad():

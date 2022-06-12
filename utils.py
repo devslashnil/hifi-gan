@@ -19,6 +19,7 @@ def plot_spectrogram(spectrogram):
     return fig
 
 
+# init_weights задает нормальное распредение для весов, где среднее 0, а стандартное отклонение 0.01
 def init_weights(m, mean=0.0, std=0.01):
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
