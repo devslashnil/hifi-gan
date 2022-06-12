@@ -188,7 +188,6 @@ class DiscriminatorP(torch.nn.Module):
         self.period = period
         # по умолчанию весы нормализуются также как и для предыдущих моделей
         norm_f = weight_norm if use_spectral_norm == False else spectral_norm
-        # TODO: с увеличением?
         # создаеим список свёрточных слое с увеличением каналов от 1 до 1024
         # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0,
         # dilation=1, groups=1, bias=True, padding_mode='zeros', device=None, dtype=None)
@@ -199,8 +198,10 @@ class DiscriminatorP(torch.nn.Module):
             norm_f(Conv2d(512, 1024, (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0))),
             norm_f(Conv2d(1024, 1024, (kernel_size, 1), 1, padding=(2, 0))),
         ])
+        # создаем последний свёрточный слой, который сузит 1024 канала в один
         self.conv_post = norm_f(Conv2d(1024, 1, (3, 1), 1, padding=(1, 0)))
 
+    # Функция forward вычисляет результирующие тензоры из входных тензоров.
     def forward(self, x):
         fmap = []
 
