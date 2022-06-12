@@ -95,7 +95,8 @@ def main():
     with open(config_file) as f:
         data = f.read()
 
-    # преобразуем полученный ранее конфиг в питон объект для удобства работы
+    # преобразуем полученный ранее конфиг с гипперпараметрами
+    # в питон объект для удобства работы
     global h
     json_config = json.loads(data)
     h = AttrDict(json_config)
