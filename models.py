@@ -13,7 +13,9 @@ class ResBlock1(torch.nn.Module):
     def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5)):
         # для создаваемых моделей вызывем эту строчку в конструкторе
         super(ResBlock1, self).__init__()
+        # сохраняем гиперпараметры
         self.h = h
+        # создаем список 3ых первых подряд идущих расширенные свёртки с расширениями (1, 3, 5)
         self.convs1 = nn.ModuleList([
             weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=dilation[0],
                                padding=get_padding(kernel_size, dilation[0]))),
@@ -22,8 +24,11 @@ class ResBlock1(torch.nn.Module):
             weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=dilation[2],
                                padding=get_padding(kernel_size, dilation[2])))
         ])
+
+        # инитиализирует веса mean=0 std=0.01
         self.convs1.apply(init_weights)
 
+        # создаем список 3ых подряд идущих свёрток с расширением 1
         self.convs2 = nn.ModuleList([
             weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=1,
                                padding=get_padding(kernel_size, 1))),
@@ -32,17 +37,27 @@ class ResBlock1(torch.nn.Module):
             weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=1,
                                padding=get_padding(kernel_size, 1)))
         ])
+        # инитиализирует веса mean=0 std=0.01
         self.convs2.apply(init_weights)
 
+    # Функция forward вычисляет результирующие тензоры из входных тензоров.
     def forward(self, x):
+        # проходим одновременно по двум спискам с расширенными свертками
         for c1, c2 in zip(self.convs1, self.convs2):
+            # пропускаем вход через ReLU, с а = 0.1
             xt = F.leaky_relu(x, LRELU_SLOPE)
+            # пропускаем вход через расширенную свертку с заданным из гипперпараметров расширением
             xt = c1(xt)
+            # пропускаем вход через ReLU, с а = 0.1
             xt = F.leaky_relu(xt, LRELU_SLOPE)
+            # пропускаем вход через расширенную свертку с расширением 1
             xt = c2(xt)
+            # между каждой парой слоёв добавляем исходный входной вектор к результату от слоя
+            # за счет этого шага и будет происходить процесс пропуска слоев
             x = xt + x
         return x
 
+    # TODO:
     def remove_weight_norm(self):
         for l in self.convs1:
             remove_weight_norm(l)
@@ -153,6 +168,7 @@ class Generator(torch.nn.Module):
 
         return x
 
+    # TODO:
     def remove_weight_norm(self):
         print('Removing weight norm...')
         for l in self.ups:
@@ -162,12 +178,20 @@ class Generator(torch.nn.Module):
         remove_weight_norm(self.conv_pre)
         remove_weight_norm(self.conv_post)
 
-
+# Дискриминатор
 class DiscriminatorP(torch.nn.Module):
+    # инитиализация генератора
     def __init__(self, period, kernel_size=5, stride=3, use_spectral_norm=False):
+        # для создаваемых моделей вызывем эту строчку в конструкторе
         super(DiscriminatorP, self).__init__()
+        # TODO:
         self.period = period
+        # по умолчанию весы нормализуются также как и для предыдущих моделей
         norm_f = weight_norm if use_spectral_norm == False else spectral_norm
+        # TODO: с увеличением?
+        # создаеим список свёрточных слое с увеличением каналов от 1 до 1024
+        # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0,
+        # dilation=1, groups=1, bias=True, padding_mode='zeros', device=None, dtype=None)
         self.convs = nn.ModuleList([
             norm_f(Conv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0))),
             norm_f(Conv2d(32, 128, (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0))),
