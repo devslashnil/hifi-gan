@@ -9,6 +9,7 @@ from scipy.io.wavfile import write
 from env import AttrDict
 from meldataset import mel_spectrogram, MAX_WAV_VALUE, load_wav
 from models import Generator
+import pickle
 
 h = None
 device = None
@@ -61,22 +62,26 @@ def inference(a):
         # итерируем по входным файлам
         for i, filname in enumerate(filelist):
             # получаем данные аудио и частоту дискретизации
+            # вектор битовый глубины 16 бит и 22050 Гц сэмпл рейт
             wav, sr = load_wav(os.path.join(a.input_wavs_dir, filname))
-            # TODO: короче говоря обработка аудио и его прокидывание
-            print('--- wav, sr,', wav, sr)
+            # нормализуем волну, чтобы значения были от 0..1
+            # MAX_WAV_VALUE = 2^15 = 32768
             wav = wav / MAX_WAV_VALUE
-            print('--- wav / MAX_WAV_VALUE,', wav)
+            # преобразуем вектор в тензор
             wav = torch.FloatTensor(wav).to(device)
-            print('--- torch.FloatTensor(wav).to(device)', wav)
+            # wav.unsqueeze(0) увеличит размерность по нулевой оси из  [] in [[]]
             x = get_mel(wav.unsqueeze(0))
+            # записываем размеры мел-спектрограмм для будущего анализа
+            with open('./mel_files/{}_mel.pickle'.format(os.path.splitext(filname)[0]), 'wb') as handle:
+                pickle.dump(x, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            # генерируем аудио
             y_g_hat = generator(x)
-            print('--- y_g_hat', y_g_hat)
+            # squeeze  уменьшает размерность [[]] в []
             audio = y_g_hat.squeeze()
-            print('--- y_g_hat.squeeze()', audio)
+            # востанавливаем прежнюю размер векторов из 0..1 в 0..32768
             audio = audio * MAX_WAV_VALUE
-            print('--- audio * MAX_WAV_VALUE', audio)
+            # преобразуем вещественные в целые
             audio = audio.cpu().numpy().astype('int16')
-            print("--- audio.cpu().numpy().astype('int16')", audio)
 
 
             # записываем в папку результатов и в консоль результаты работы генератора
