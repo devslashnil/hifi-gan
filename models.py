@@ -57,7 +57,10 @@ class ResBlock1(torch.nn.Module):
             x = xt + x
         return x
 
-    # TODO:
+    # Weight norm should be removed at inference time. By using the weight norm,
+    # we split the weights into the norm/direction of the weight vector. It helps at training time,
+    # but we don't need to calculate the product of norm &
+    # direction every time, hence we remove them by multiplying them at first.
     def remove_weight_norm(self):
         for l in self.convs1:
             remove_weight_norm(l)
@@ -168,7 +171,10 @@ class Generator(torch.nn.Module):
 
         return x
 
-    # TODO:
+    # Weight norm should be removed at inference time. By using the weight norm,
+    # we split the weights into the norm/direction of the weight vector. It helps at training time,
+    # but we don't need to calculate the product of norm &
+    # direction every time, hence we remove them by multiplying them at first.
     def remove_weight_norm(self):
         print('Removing weight norm...')
         for l in self.ups:

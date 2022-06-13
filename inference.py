@@ -48,9 +48,13 @@ def inference(a):
     # создаем директорию для сгенерированнных файлов
     os.makedirs(a.output_dir, exist_ok=True)
 
-    # TODO: understand
+    # Тогл для процесса инференса
+    # torch.no_grad() + model.eval() вырубает подсчет градиентов
     generator.eval()
-    # TODO: understand
+    # Weight norm should be removed at inference time. By using the weight norm,
+    # we split the weights into the norm/direction of the weight vector. It helps at training time,
+    # but we don't need to calculate the product of norm &
+    # direction every time, hence we remove them by multiplying them at first.
     generator.remove_weight_norm()
     # для inference, мы отключаем autograd пайторча, потому что нам больше не надо считать градиент
     with torch.no_grad():
@@ -68,8 +72,12 @@ def inference(a):
             y_g_hat = generator(x)
             print('--- y_g_hat', y_g_hat)
             audio = y_g_hat.squeeze()
+            print('--- y_g_hat.squeeze()', audio)
             audio = audio * MAX_WAV_VALUE
+            print('--- audio * MAX_WAV_VALUE', audio)
             audio = audio.cpu().numpy().astype('int16')
+            print("--- audio.cpu().numpy().astype('int16')", audio)
+
 
             # записываем в папку результатов и в консоль результаты работы генератора
             output_file = os.path.join(a.output_dir, os.path.splitext(filname)[0] + '_generated.wav')
