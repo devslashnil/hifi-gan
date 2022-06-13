@@ -9,4 +9,5 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-CMD [ "python3", "inference.py" , "--checkpoint_file", "./", "--host=0.0.0.0"]
+# python3 inference.py --checkpoint_file ./LJ_V1/generator_v1
+CMD [ "python3", "inference.py" , "--checkpoint_file", "./LJ_V1/generator_v1"]
